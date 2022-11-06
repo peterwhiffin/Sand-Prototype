@@ -1,0 +1,4 @@
+repository "banana@shakeandjer@cloud"
+  path "/"
+    br "/main"
+    co "/main"
