@@ -11,11 +11,11 @@ TagManager:
   - 
   - Water
   - UI
-  - Damageable
+  - 
   - InAir
   - Ground
-  - 
-  - 
+  - Blockable
+  - Damageable
   - 
   - 
   - 

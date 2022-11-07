@@ -59,9 +59,12 @@ public class PlayerGroundedState : PlayerState
             player.endAbility = true;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 1, .2f);
             player.Block();
+
+            player.blockCollider.enabled = true;
         }
         else
         {
+            player.blockCollider.enabled = false;
             player.blocking = false;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 0, .2f);
         }
@@ -71,12 +74,6 @@ public class PlayerGroundedState : PlayerState
 
         if (player.endAbility)
             player.EndAbility();
-
-        if (player.attackHit)
-            player.AttackHit();
-
-        if (player.attackBlocked)
-            player.BlockedAttack();
 
         if (player.shouldCheckHit)
             player.HitCheck();
