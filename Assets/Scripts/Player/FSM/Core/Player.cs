@@ -26,7 +26,6 @@ public class Player : MonoBehaviour, IDamageable
     public Transform swordArmTarget;
     public Transform hitCheckPosition;
     public TwoBoneIKConstraint swordArmConstraint;
-    public MeshCollider blockCollider;
     public AudioSource audioSource;
     public List<string> attackDirection;
     public List<Transform> blockingPositions;
@@ -58,12 +57,9 @@ public class Player : MonoBehaviour, IDamageable
     public bool attackHit;
     public bool shouldCheckHit;
     public bool dead;
-    //public bool hitByOther;
+    public bool hitByOther;
     public bool grounded;
     public bool jumping;
-
-    public bool hitByOther;
-    public bool blockedByOther;
 
     public void Awake()
     {
@@ -155,77 +151,56 @@ public class Player : MonoBehaviour, IDamageable
 
     public void Block() => swordArmTarget.SetPositionAndRotation(Vector3.Lerp(swordArmTarget.position, blockingPositions[blockIndex].position, .2f), Quaternion.RotateTowards(swordArmTarget.rotation, blockingPositions[blockIndex].rotation, 6f));
 
-    public void ShouldCheckHit() => shouldCheckHit = true;
+    public bool CheckDamage(int damage, int swingDirection)
+    {
+        if(blocking && swingDirection == blockIndex)
+        {
+            BlockedAttack();
+            return true;
+        }
+        else
+        {
+            currentHealth -= damage;
+            hitByOther = true;
 
-    public void EndHitCheck() => shouldCheckHit = false;
+            if (currentHealth <= 0)
+                dead = true;
+
+            AttackHit();           
+            return false;
+        }
+    }
 
     public void HitCheck()
     {
-        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask);
-        blockedByOther = false;
+        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask, QueryTriggerInteraction.Ignore);
 
         foreach (Collider collider in colliders)
         {
             if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.gameObject))
             {
-                blockedByOther = damageableObject.AttackBlocked();
-
-                //blockedByOther = damageableObject.CheckDamage(30, currentIndex);
+                damageableObject.CheckDamage(30, currentIndex);
                 hitObjects.Add(collider.gameObject);
-
-
-                if (blockedByOther)
-                {
-                    audioSource.PlayOneShot(audioClips[0], 1);
-                    endAbility = true;
-                    return;
-                }
             }
         }
-
-
-        
-        foreach(GameObject gameObject in hitObjects)
-        {
-            gameObject.TryGetComponent<IDamageable>(out IDamageable damageableObject);
-            damageableObject.CheckDamage(30, currentIndex);
-
-        }
-
-        
     }
 
-    public bool CheckDamage(int damage, int index)
+    public void ShouldCheckHit() => shouldCheckHit = true;
+
+    public void EndHitCheck() => shouldCheckHit = false;
+
+    public void AttackHit()
     {
-        currentHealth -= damage;
         audioSource.PlayOneShot(audioClips[1], 1);
-        return false;
+        attackHit = false;
     }
 
-    public bool AttackBlocked()
+    public void BlockedAttack()
     {
-        return false;
+        endAbility = true;
+        audioSource.PlayOneShot(audioClips[0], 1);
+        attackBlocked = false;
     }
-
-    //public bool CheckDamage(int damage, int swingDirection)
-    //{
-    //    if (blocking && swingDirection == blockIndex)
-    //    {
-    //        BlockedAttack();
-    //        return true;
-    //    }
-    //    else
-    //    {
-    //        currentHealth -= damage;
-    //        hitByOther = true;
-
-    //        if (currentHealth <= 0)
-    //            dead = true;
-
-    //        AttackHit();
-    //        return false;
-    //    }
-    //}
 
     public void CheckAbilityDone()
     {

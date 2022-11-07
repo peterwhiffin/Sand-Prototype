@@ -37,6 +37,12 @@ public class EnemyGroundedState : EnemyState
         if (enemy.shouldCheckHit)
             enemy.HitCheck();
 
+        if (enemy.attackBlocked)
+            enemy.AttackBlocked();
+
+        if (enemy.attackHit)
+            enemy.AttackHit();
+
         if (enemy.hitByOther)
             stateMachine.ChangeState(enemy.HitState);  
     }
