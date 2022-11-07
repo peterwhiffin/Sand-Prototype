@@ -31,7 +31,7 @@ public class PlayerInAirState : PlayerState
 
         if (player.jumping)
         {
-            player.controller.Move(new Vector3(player.controller.velocity.x, Mathf.Lerp(player.controller.velocity.y + 2, .3f, .1f), player.controller.velocity.z) * Time.deltaTime);
+            player.controller.Move(new Vector3(player.controller.velocity.x, Mathf.Lerp(player.controller.velocity.y + 2, 1.5f, .2f), player.controller.velocity.z) * Time.deltaTime);
         }
         else
             player.Gravity();

@@ -115,7 +115,7 @@ public class Player : MonoBehaviour, IDamageable
         controller.Move(speed * Time.deltaTime * moveDir.normalized);    
     }
 
-    public void Gravity() => controller.Move(transform.up * -11f * Time.deltaTime);
+    public void Gravity() => controller.Move(transform.up * -9.81f * Time.deltaTime);
 
     public bool GroundCheck()
     {
@@ -245,6 +245,7 @@ public class Player : MonoBehaviour, IDamageable
 
     public void Debugging()
     {
+        Debug.Log(controller.velocity);
     }
 
     private void OnDrawGizmos()
