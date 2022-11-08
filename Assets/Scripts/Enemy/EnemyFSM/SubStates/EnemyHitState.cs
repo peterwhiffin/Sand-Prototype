@@ -12,6 +12,7 @@ public class EnemyHitState : EnemyAbilityState
     {
         base.Enter();
         enemy.animator.Play("HitReact", 1, 0f);
+        enemy.audioSource.PlayOneShot(enemy.audioClips[1], 1);
         enemy.hitByOther = false;
     }
 

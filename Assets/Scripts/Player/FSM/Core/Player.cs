@@ -26,6 +26,7 @@ public class Player : MonoBehaviour, IDamageable
     public Transform swordArmTarget;
     public Transform hitCheckPosition;
     public TwoBoneIKConstraint swordArmConstraint;
+    public BoxCollider blockCollider;
     public AudioSource audioSource;
     public List<string> attackDirection;
     public List<Transform> blockingPositions;
@@ -34,32 +35,35 @@ public class Player : MonoBehaviour, IDamageable
     public LayerMask hitMask;
     public LayerMask groundCheckMask;
    
-    public int blockIndex;
+    public int directionIndex;
     public int currentHealth;
     public int animLayer;
-    public int currentIndex;
+    public int usingIndex;
     
-    public float blockChoiceX;
-    public float blockChoiceY;
+    public float directionChoiceX;
+    public float directionChoiceY;   
     public float turnSmoothVelocity;
-    public float turnSmoothTime = .01f;
-    public float cameraYRot;
+    public float turnSmoothTime = .01f;    
+    public float cameraYRot;    
     public float groundHeight;
     public float jumpHeight;
     
     public Vector3 startingCameraRotation;
 
     public bool abilityDone;
-    public bool endAbility;
+    public bool endAbility;   
     public bool isAttacking;
-    public bool blocking;
-    public bool attackBlocked;
+    public bool isBlocking;
     public bool attackHit;
     public bool shouldCheckHit;
-    public bool dead;
-    public bool hitByOther;
+
     public bool grounded;
     public bool jumping;
+
+    public bool blockedByOther;
+    public bool hitByOther;
+
+    
 
     public void Awake()
     {
@@ -84,13 +88,14 @@ public class Player : MonoBehaviour, IDamageable
         Cursor.visible = false;
         abilityDone = true;
         endAbility = false;
-        dead = false;
+        blockedByOther = false;
+        hitByOther = false;
     }
 
     public void Update()
     {
         StateMachine.CurrentState.LogicUpdate();
-        Debugging();
+        Debugging(); 
     }
 
     public void FixedUpdate() => StateMachine.CurrentState.PhysicsUpdate();
@@ -105,9 +110,9 @@ public class Player : MonoBehaviour, IDamageable
         float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + mainCam.transform.eulerAngles.y;
         float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
-        if (input.y >= 0 && !blocking)
+        if (input.y >= 0 && !isBlocking)
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
-        else if(!blocking)
+        else if(!isBlocking)
             transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(transform.eulerAngles.y, Mathf.LerpAngle(targetAngle, targetAngle + 180, 1f), .1f), transform.eulerAngles.z);
 
         Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
@@ -129,47 +134,31 @@ public class Player : MonoBehaviour, IDamageable
 
     public void CombatDirection(Vector2 lookInput)
     {
-        blockChoiceX += lookInput.x;
-        blockChoiceY += lookInput.y;
+        directionChoiceX += lookInput.x;
+        directionChoiceY += lookInput.y;
 
-        if (Mathf.Abs(blockChoiceX) > 45 || blockChoiceY > 25)
+        if (Mathf.Abs(directionChoiceX) > 45 || directionChoiceY > 15)
         {
-            if (blockChoiceY > Mathf.Abs(blockChoiceX))
-                blockIndex = 2;
+            if (directionChoiceY > Mathf.Abs(directionChoiceX))
+                directionIndex = 2;
             else
             {
-                if (blockChoiceX > 0)
-                    blockIndex = 0;
+                if (directionChoiceX > 0)
+                    directionIndex = 0;
                 else
-                    blockIndex = 1;
+                    directionIndex = 1;
             }
 
-            blockChoiceX = 0;
-            blockChoiceY = 0;
+            directionChoiceX = 0;
+            directionChoiceY = 0;
         }
     }
 
-    public void Block() => swordArmTarget.SetPositionAndRotation(Vector3.Lerp(swordArmTarget.position, blockingPositions[blockIndex].position, .2f), Quaternion.RotateTowards(swordArmTarget.rotation, blockingPositions[blockIndex].rotation, 6f));
+    public void Block() => swordArmTarget.SetPositionAndRotation(Vector3.Lerp(swordArmTarget.position, blockingPositions[directionIndex].position, .2f), Quaternion.RotateTowards(swordArmTarget.rotation, blockingPositions[directionIndex].rotation, 6f));
 
-    public bool CheckDamage(int damage, int swingDirection)
-    {
-        if(blocking && swingDirection == blockIndex)
-        {
-            BlockedAttack();
-            return true;
-        }
-        else
-        {
-            currentHealth -= damage;
-            hitByOther = true;
+    public void ShouldCheckHit() => shouldCheckHit = true;
 
-            if (currentHealth <= 0)
-                dead = true;
-
-            AttackHit();           
-            return false;
-        }
-    }
+    public void EndHitCheck() => shouldCheckHit = false;
 
     public void HitCheck()
     {
@@ -179,27 +168,29 @@ public class Player : MonoBehaviour, IDamageable
         {
             if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.gameObject))
             {
-                damageableObject.CheckDamage(30, currentIndex);
+                blockedByOther = damageableObject.CheckDamage(30, usingIndex);
                 hitObjects.Add(collider.gameObject);
             }
         }
     }
 
-    public void ShouldCheckHit() => shouldCheckHit = true;
-
-    public void EndHitCheck() => shouldCheckHit = false;
-
-    public void AttackHit()
+    public bool CheckDamage(int damage, int swingDirection)
     {
-        audioSource.PlayOneShot(audioClips[1], 1);
-        attackHit = false;
+        if (isBlocking && swingDirection == directionIndex)
+            return true;        
+        else
+        {
+            currentHealth -= damage;
+            hitByOther = true;
+            return false;
+        }
     }
 
-    public void BlockedAttack()
+    public void BlockedByOther()
     {
-        endAbility = true;
         audioSource.PlayOneShot(audioClips[0], 1);
-        attackBlocked = false;
+        endAbility = true;
+        blockedByOther = false;
     }
 
     public void CheckAbilityDone()

@@ -26,11 +26,9 @@ public class PlayerGroundedState : PlayerState
 
         player.Gravity();
 
-        if (player.dead)
-        {
+        if (player.currentHealth <= 0)
             stateMachine.ChangeState(player.DeathState);
-        }
-
+        
         if (!player.controller.isGrounded)
             stateMachine.ChangeState(player.InAirState);
 
@@ -41,7 +39,7 @@ public class PlayerGroundedState : PlayerState
         {
             if (attackInput != 0 && blockInput == 0 && canAttack)
             {
-                player.currentIndex = player.blockIndex;
+                player.usingIndex = player.directionIndex;
                 stateMachine.ChangeState(player.AttackState);
             }
 
@@ -55,14 +53,16 @@ public class PlayerGroundedState : PlayerState
         if (blockInput != 0)
         {
             player.CameraLockToCharacter();
-            player.blocking = true;
+            player.blockCollider.enabled = true;
+            player.isBlocking = true;
             player.endAbility = true;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 1, .2f);
             player.Block();
         }
         else
         {
-            player.blocking = false;
+            player.blockCollider.enabled = false;
+            player.isBlocking = false;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 0, .2f);
         }
 
@@ -72,14 +72,11 @@ public class PlayerGroundedState : PlayerState
         if (player.endAbility)
             player.EndAbility();
 
-        if (player.attackHit)
-            player.AttackHit();
-
-        if (player.attackBlocked)
-            player.BlockedAttack();
-
         if (player.shouldCheckHit)
             player.HitCheck();
+        
+        if (player.blockedByOther)
+            player.BlockedByOther();
     }
 
     public override void PhysicsUpdate()

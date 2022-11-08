@@ -13,6 +13,7 @@ public class PlayerHitState : PlayerAbilityState
         base.Enter();
         player.animLayer = 1;
         player.animator.Play("HitReact", 1, 0f);
+        player.audioSource.PlayOneShot(player.audioClips[1], 1);
         player.hitByOther = false;
     }
 
