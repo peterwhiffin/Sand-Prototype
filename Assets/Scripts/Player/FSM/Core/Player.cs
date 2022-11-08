@@ -64,7 +64,7 @@ public class Player : MonoBehaviour, IDamageable
     public bool hitByOther;
 
     
-
+    //state creation
     public void Awake()
     {
         StateMachine = new PlayerStateMachine();
@@ -80,9 +80,9 @@ public class Player : MonoBehaviour, IDamageable
 
     public void Start()
     {
-        currentHealth = playerData.maxHealth;
-        inputHandler = GetComponent<InputHandler>();
         StateMachine.Initialize(IdleState);
+        currentHealth = playerData.maxHealth;
+        inputHandler = GetComponent<InputHandler>();       
         startingCameraRotation = cameraFollowTarget.eulerAngles;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -92,6 +92,8 @@ public class Player : MonoBehaviour, IDamageable
         hitByOther = false;
     }
 
+
+    //runs the logicUpdate method of the current state, which is set in the StateMachine class by calling stateMachine.ChangeState();
     public void Update()
     {
         StateMachine.CurrentState.LogicUpdate();
@@ -103,14 +105,17 @@ public class Player : MonoBehaviour, IDamageable
     public void LateUpdate() => StateMachine.CurrentState.CameraUpdate();
 
 
-    public void MoveCharacter(float speed, Vector2 input)
+    
+    public void MoveCharacter(float speed, Vector2 movementInput)
     {
-        Vector3 direction = new Vector3(input.x, 0f, input.y).normalized;
-      
+        //this gets the correct angle to rotate the character in reference to the camera so the character will rotate left, right, and forward when moving. This is just Brackeys. 
+        Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;     
         float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + mainCam.transform.eulerAngles.y;
         float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
 
-        if (input.y >= 0 && !isBlocking)
+
+        //rotates the player forward if not blocking and trying to move forward.
+        if (movementInput.y >= 0 && !isBlocking)
             transform.rotation = Quaternion.Euler(0f, angle, 0f);
         else if(!isBlocking)
             transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(transform.eulerAngles.y, Mathf.LerpAngle(targetAngle, targetAngle + 180, 1f), .1f), transform.eulerAngles.z);
@@ -120,6 +125,7 @@ public class Player : MonoBehaviour, IDamageable
         controller.Move(speed * Time.deltaTime * moveDir.normalized);    
     }
 
+    //moves the character downward. This is a WIP. This is not how gravity works.
     public void Gravity() => controller.Move(transform.up * -9.81f * Time.deltaTime);
 
     public bool GroundCheck()
@@ -132,6 +138,10 @@ public class Player : MonoBehaviour, IDamageable
             return false;
     }
 
+    //This selects an integer based on mouse movement input. 
+    //Just checks if vertical movement is greater than horizontal and sets directionIndex, which is used for block and swing direction.
+    //The direction choices have minimum thresholds to be able to change the direction index, which should probably be variables.
+    //Currently biased towards vertical mouse movement.
     public void CombatDirection(Vector2 lookInput)
     {
         directionChoiceX += lookInput.x;
@@ -154,12 +164,17 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
+    //moves and rotates the sword arm IK target based on direction index. 
     public void Block() => swordArmTarget.SetPositionAndRotation(Vector3.Lerp(swordArmTarget.position, blockingPositions[directionIndex].position, .2f), Quaternion.RotateTowards(swordArmTarget.rotation, blockingPositions[directionIndex].rotation, 6f));
 
     public void ShouldCheckHit() => shouldCheckHit = true;
 
     public void EndHitCheck() => shouldCheckHit = false;
 
+    //This gets called while shouldCheckHit is true, which is set by animation events on the different swing clips.
+    //Checks all colliders hit for the IDamageable interface and runs checkdamage method on that object, which returns a bool indicating if our attack was blocked.
+    //also temporarily adds the hit object to a list so that we can only hit each object once per attack.
+    // this list is cleared in the EndAbility method.
     public void HitCheck()
     {
         Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask, QueryTriggerInteraction.Ignore);
@@ -174,6 +189,9 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
+    //this interface method is called by other objects' hit checks.
+    //returns blocking bool and applies damage if not blocked.
+    //may want to use a general damage method for all damage.
     public bool CheckDamage(int damage, int swingDirection)
     {
         if (isBlocking && swingDirection == directionIndex)
@@ -186,6 +204,7 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
+    //plays block audio when OUR attack is blocked and ends our current ability
     public void BlockedByOther()
     {
         audioSource.PlayOneShot(audioClips[0], 1);
@@ -193,6 +212,9 @@ public class Player : MonoBehaviour, IDamageable
         blockedByOther = false;
     }
 
+
+    //this is called while abilityDone is false.
+    //moves the correct animation layer weight to 1 and sets endAbility bool once the animation is finished playing, which will call the endAbility method.
     public void CheckAbilityDone()
     {
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(animLayer);
@@ -203,6 +225,8 @@ public class Player : MonoBehaviour, IDamageable
         animator.SetLayerWeight(animLayer, Mathf.Lerp(animator.GetLayerWeight(animLayer), 1f, .1f));
     }
 
+    //called after the animation of current ability is finished.
+    //basically just resets the ability-initiating variables.
     public void EndAbility()
     {
         shouldCheckHit = false;
@@ -218,8 +242,12 @@ public class Player : MonoBehaviour, IDamageable
         }
     }
 
+    //locks camera behind character. This will probably get updated/moved.
     public void CameraLockToCharacter() => transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(transform.eulerAngles.y, cameraFollowTarget.eulerAngles.y, .1f), transform.eulerAngles.z);
 
+    //basic camera controller.
+    //The mainCam is a child of the cameraFollowTarget object.
+    //cameraFollowTarget just lerps its position and rotation around based on player position and mouse input. WIP.
     public void UpdateCamera(Vector2 lookInput)
     {
         float camY;
@@ -234,11 +262,14 @@ public class Player : MonoBehaviour, IDamageable
         cameraFollowTarget.eulerAngles = new Vector3(Mathf.MoveTowardsAngle(cameraFollowTarget.eulerAngles.x, startingCameraRotation.x + cameraYRot, 10f), Mathf.LerpAngle(cameraFollowTarget.eulerAngles.y, cameraFollowTarget.eulerAngles.y + lookInput.x, .1f), cameraFollowTarget.eulerAngles.z);
     }
 
+    //just a place to keep all my debugs.
     public void Debugging()
     {
         Debug.Log(controller.velocity);
     }
 
+    //draws gizmoz.
+    //currently draws the hitcheck and groundcheck spheres.
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;

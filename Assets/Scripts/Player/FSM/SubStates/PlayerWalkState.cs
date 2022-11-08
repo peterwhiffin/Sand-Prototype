@@ -35,6 +35,7 @@ public class PlayerWalkState : PlayerGroundedState
         if (runInput != 0 && movementInput.y >= 0)
             stateMachine.ChangeState(player.RunState);
 
+
         player.MoveCharacter(playerData.walkSpeed + backSpeed, movementInput);
 
         if (movementInput.y < 0)
