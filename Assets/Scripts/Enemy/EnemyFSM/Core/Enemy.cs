@@ -22,7 +22,6 @@ public class Enemy : MonoBehaviour, IDamageable
     public Transform enemySwordArmTarget;
     public Transform hitCheckPosition;
     public TwoBoneIKConstraint enemySwordArmConstraint;
-    public BoxCollider blockCollider;
     public LayerMask hitMask;
     public AudioSource audioSource;
     public List<AudioClip> audioClips;
@@ -31,30 +30,25 @@ public class Enemy : MonoBehaviour, IDamageable
     public List<Vector3> destinationPositions;
     public List<Transform> destinations;
     public List<GameObject> hitObjects;
+    public Collider weaponCollider;
 
     public int currentHealth;
     public int currentDestination;
-    public int blockIndex;
     public int animLayer;
-    public int currentIndex;
+    public int usingIndex;
 
     public bool abilityDone;
     public bool endAbility;
     public bool playerInProximity;
     public bool playerDetected;
     public bool isAttacking;
-    public bool shouldBattleCry;
     public bool isBlocking;   
-    public bool shouldCheckHit;
-    
+    public bool shouldCheckHit;   
     public bool hitByOther;
     public bool blockedByOther;
 
     public float attackTimer;
     public float blockTimer;
-
-
-
 
     private void Awake()
     {
@@ -72,7 +66,6 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         currentHealth = enemyData.maxHealth;
         StateMachine.Initialize(IdleState);
-        shouldBattleCry = true;
         abilityDone = true;
         playerInProximity = false;
         playerDetected = false;
@@ -118,7 +111,13 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         if (detectedPlayer.isAttacking && !isBlocking)
         {
-            blockIndex = detectedPlayer.usingIndex;
+            if (detectedPlayer.usingIndex == 0)
+                usingIndex = 1;
+            else if (detectedPlayer.usingIndex == 1)
+                usingIndex = 0;
+            else if (detectedPlayer.usingIndex == 2)
+                usingIndex = 2;
+
             return true;
         }
         else
@@ -126,9 +125,9 @@ public class Enemy : MonoBehaviour, IDamageable
     }
 
     public void Block()
-    {        
+    {
         enemySwordArmConstraint.weight = Mathf.MoveTowards(enemySwordArmConstraint.weight, 1f, .1f);
-        enemySwordArmTarget.SetPositionAndRotation(Vector3.Lerp(enemySwordArmTarget.position, enemyBlockingPositions[blockIndex].position, .1f), Quaternion.RotateTowards(enemySwordArmTarget.rotation, enemyBlockingPositions[blockIndex].rotation, 3f));
+        enemySwordArmTarget.SetPositionAndRotation(Vector3.Lerp(enemySwordArmTarget.position, enemyBlockingPositions[usingIndex].position, .1f), Quaternion.RotateTowards(enemySwordArmTarget.rotation, enemyBlockingPositions[usingIndex].rotation, 3f));
     }
 
     public bool EndBlock()
@@ -145,23 +144,17 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         if (detectedPlayer.isBlocking)
         {
-            if (detectedPlayer.usingIndex == 0)
-                return Random.Range(1, 3);
+            if (detectedPlayer.usingIndex == 1)
+                return 0;
             else if (detectedPlayer.usingIndex == 2)
-                return Random.Range(0, 2);
+                return 2;
             else
             {
-                int zero = Random.Range(0, 100);
-                int two = Random.Range(0, 100);
-
-                if (zero > two)
-                    return 0;
-                else
-                    return 2;
-            }                   
+                return 1;
+            }
         }
         else
-            return Random.Range(0, 2);
+            return Random.Range(0, 3);
     }
 
     public void CheckAbilityDone()
@@ -196,28 +189,25 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public void HitCheck()
     {
-        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask, QueryTriggerInteraction.Ignore);
+        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask);
 
         foreach (Collider collider in colliders)
         {
-            if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.gameObject))
+            if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.transform.root.gameObject))
             {
-                blockedByOther = damageableObject.CheckDamage(30, currentIndex);
-                hitObjects.Add(collider.gameObject);
+                blockedByOther = damageableObject.CheckHit(30, usingIndex);
+                hitObjects.Add(collider.transform.root.gameObject);
+                if (blockedByOther)
+                    shouldCheckHit = false;
             }
         }
     }
 
-    public bool CheckDamage(int damage, int swingDirection)
+    public bool CheckHit(int damage, int swingDirection)
     {
-        if (isBlocking && swingDirection == blockIndex)
-            return true;       
-        else
-        {
             currentHealth -= damage;
             hitByOther = true;
-            return false;
-        }
+            return false;    
     }
 
     public void BlockedByOther()
@@ -238,6 +228,6 @@ public class Enemy : MonoBehaviour, IDamageable
 
     public void Debugging()
     {
-       // Debug.Log(Vector3.Angle(transform.forward, detectedPlayer.transform.forward));
+         
     }
 }

@@ -15,6 +15,6 @@ MonoBehaviour:
   walkSpeed: 2
   runSpeed: 4
   attackMoveSpeed: 0
-  maxHealth: 100
+  maxHealth: 99999
   idleWaitTime: 5
   attackDistance: 1.5

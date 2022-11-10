@@ -13,7 +13,7 @@ public class PlayerAttackState : PlayerAbilityState
         base.Enter();
         player.inputHandler.canAttack = false;
         player.animLayer = 1;       
-        player.animator.Play(player.attackDirection[player.usingIndex], 1, 0f);
+        player.animator.Play(player.attackDirections[player.usingIndex], 1, 0f);
         player.isAttacking = true; 
     }
 

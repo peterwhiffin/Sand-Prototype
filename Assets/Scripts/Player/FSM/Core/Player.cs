@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using TMPro;
 
 public class Player : MonoBehaviour, IDamageable
 {
@@ -25,15 +26,21 @@ public class Player : MonoBehaviour, IDamageable
     public Transform cameraFollowTarget;
     public Transform swordArmTarget;
     public Transform hitCheckPosition;
+    public Transform hitCheckPositionTwo;
     public TwoBoneIKConstraint swordArmConstraint;
-    public BoxCollider blockCollider;
     public AudioSource audioSource;
-    public List<string> attackDirection;
+    public List<string> attackDirections;
     public List<Transform> blockingPositions;
     public List<AudioClip> audioClips;
     public List<GameObject> hitObjects;
+    public List<GameObject> hasBeenHit;
     public LayerMask hitMask;
     public LayerMask groundCheckMask;
+    public Collider weaponCollider;
+    public GameObject weapon;
+
+    public TMP_Text FPSValue;
+    public GameObject enemy;
    
     public int directionIndex;
     public int currentHealth;
@@ -47,8 +54,14 @@ public class Player : MonoBehaviour, IDamageable
     public float cameraYRot;    
     public float groundHeight;
     public float jumpHeight;
+    public float targetAngle;
+    public float lookAngle;
+
+    public Vector3 hitCheckSize;
     
     public Vector3 startingCameraRotation;
+
+    public Vector3 oldHitCheckPosition;
 
     public bool abilityDone;
     public bool endAbility;   
@@ -90,6 +103,8 @@ public class Player : MonoBehaviour, IDamageable
         endAbility = false;
         blockedByOther = false;
         hitByOther = false;
+        usingIndex = 0;
+        oldHitCheckPosition = hitCheckPosition.position;
     }
 
 
@@ -97,26 +112,26 @@ public class Player : MonoBehaviour, IDamageable
     public void Update()
     {
         StateMachine.CurrentState.LogicUpdate();
-        Debugging(); 
+        Debugging();
+        oldHitCheckPosition = hitCheckPosition.position;
     }
 
     public void FixedUpdate() => StateMachine.CurrentState.PhysicsUpdate();
 
     public void LateUpdate() => StateMachine.CurrentState.CameraUpdate();
-
-
-    
+   
     public void MoveCharacter(float speed, Vector2 movementInput)
     {
         //this gets the correct angle to rotate the character in reference to the camera so the character will rotate left, right, and forward when moving. This is just Brackeys. 
         Vector3 direction = new Vector3(movementInput.x, 0f, movementInput.y).normalized;     
-        float targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + mainCam.transform.eulerAngles.y;
-        float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+         targetAngle = Mathf.Atan2(direction.x, direction.z) * Mathf.Rad2Deg + mainCam.transform.eulerAngles.y;
+        //float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+        lookAngle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, turnSmoothTime);
 
 
         //rotates the player forward if not blocking and trying to move forward.
         if (movementInput.y >= 0 && !isBlocking)
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            transform.rotation = Quaternion.Euler(0f, lookAngle, 0f);
         else if(!isBlocking)
             transform.eulerAngles = new Vector3(transform.eulerAngles.x, Mathf.LerpAngle(transform.eulerAngles.y, Mathf.LerpAngle(targetAngle, targetAngle + 180, 1f), .1f), transform.eulerAngles.z);
 
@@ -177,31 +192,47 @@ public class Player : MonoBehaviour, IDamageable
     // this list is cleared in the EndAbility method.
     public void HitCheck()
     {
-        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask, QueryTriggerInteraction.Ignore);
+        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .4f, hitMask);
 
         foreach (Collider collider in colliders)
         {
-            if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.gameObject))
+            if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.transform.root.gameObject))
             {
-                blockedByOther = damageableObject.CheckDamage(30, usingIndex);
+                //blockedByOther = damageableObject.CheckHit(30, usingIndex);
+
                 hitObjects.Add(collider.gameObject);
+
+                //if (blockedByOther)
+                //{
+                //    shouldCheckHit = false;
+                    
+                //}
             }
         }
+
+        if (hitObjects.Contains(weapon))
+        {
+            blockedByOther = true;
+        }
+        else
+            foreach(GameObject hitObject in hitObjects)
+            {
+                if (!hasBeenHit.Contains(hitObject))
+                {
+                    hitObject.GetComponent<IDamageable>().CheckHit(30, usingIndex);
+                    hasBeenHit.Add(hitObject);
+                }
+            }
     }
 
     //this interface method is called by other objects' hit checks.
     //returns blocking bool and applies damage if not blocked.
     //may want to use a general damage method for all damage.
-    public bool CheckDamage(int damage, int swingDirection)
+    public bool CheckHit(int damage, int swingDirection)
     {
-        if (isBlocking && swingDirection == directionIndex)
-            return true;        
-        else
-        {
             currentHealth -= damage;
             hitByOther = true;
-            return false;
-        }
+            return false;      
     }
 
     //plays block audio when OUR attack is blocked and ends our current ability
@@ -212,9 +243,8 @@ public class Player : MonoBehaviour, IDamageable
         blockedByOther = false;
     }
 
-
-    //this is called while abilityDone is false.
-    //moves the correct animation layer weight to 1 and sets endAbility bool once the animation is finished playing, which will call the endAbility method.
+    //this is called while abilityDone is false, which is set to false when we enter an state that derives from the PlayerAbility class
+    //moves the correct animation layer weight to 1 and sets endAbility bool once the animation is finished playing, which will call the EndAbility method.
     public void CheckAbilityDone()
     {
         AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(animLayer);
@@ -237,6 +267,7 @@ public class Player : MonoBehaviour, IDamageable
             abilityDone = true;
             endAbility = false;
             isAttacking = false;
+            hasBeenHit.Clear();
             hitObjects.Clear();
             animator.SetBool("AbilityDone", true);
         }
@@ -259,24 +290,22 @@ public class Player : MonoBehaviour, IDamageable
 
         cameraYRot = Mathf.Clamp(Mathf.LerpAngle(cameraYRot, cameraYRot - lookInput.y, .1f), -38f, 46f);
         cameraFollowTarget.position = Vector3.Lerp(cameraFollowTarget.position, new Vector3(transform.position.x, camY, transform.position.z), 1);
-        cameraFollowTarget.eulerAngles = new Vector3(Mathf.MoveTowardsAngle(cameraFollowTarget.eulerAngles.x, startingCameraRotation.x + cameraYRot, 10f), Mathf.LerpAngle(cameraFollowTarget.eulerAngles.y, cameraFollowTarget.eulerAngles.y + lookInput.x, .1f), cameraFollowTarget.eulerAngles.z);
+        cameraFollowTarget.eulerAngles = new Vector3(Mathf.MoveTowardsAngle(cameraFollowTarget.eulerAngles.x, startingCameraRotation.x + cameraYRot, 10f), Mathf.Lerp(cameraFollowTarget.eulerAngles.y, cameraFollowTarget.eulerAngles.y + lookInput.x, .1f), cameraFollowTarget.eulerAngles.z);
     }
 
-    //just a place to keep all my debugs.
+    //just a place to keep all my general debugs.
     public void Debugging()
     {
-        Debug.Log(controller.velocity);
+        FPSValue.text = Mathf.FloorToInt(1 / Time.deltaTime).ToString();
+
+        if(shouldCheckHit)
+            Debug.DrawRay(hitCheckPosition.position, hitCheckPosition.position - hitCheckPositionTwo.position, Color.red, 10f);
     }
 
-    //draws gizmoz.
+    //draws gizmos.
     //currently draws the hitcheck and groundcheck spheres.
     private void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
-
-        if(shouldCheckHit)
-            Gizmos.DrawWireSphere(hitCheckPosition.position, .3f);
-
-        Gizmos.DrawWireSphere(transform.position, playerData.groundCheckDistance);
     }
 }

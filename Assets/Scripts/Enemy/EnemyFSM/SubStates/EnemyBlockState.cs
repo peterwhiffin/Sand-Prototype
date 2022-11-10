@@ -14,7 +14,7 @@ public class EnemyBlockState : EnemyPursueState
     public override void Enter()
     {
         base.Enter();
-        enemy.blockCollider.enabled = true;
+        enemy.weaponCollider.enabled = true;
         endBlock = false;
         blockEnded = false;
         enemy.isBlocking = true;
@@ -24,7 +24,7 @@ public class EnemyBlockState : EnemyPursueState
     public override void Exit()
     {
         base.Exit();
-        enemy.blockCollider.enabled = false;
+        enemy.weaponCollider.enabled = false;
         enemy.enemySwordArmConstraint.weight = 0;
         enemy.isBlocking = false;
         enemy.blockTimer = 0;       

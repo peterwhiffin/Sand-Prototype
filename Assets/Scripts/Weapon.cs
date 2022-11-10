@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Weapon : MonoBehaviour, IDamageable
 {
-    public bool CheckDamage(int damage, int swingDirection)
+    public bool CheckHit(int damage, int swingDirection)
     {
         return true;
     }

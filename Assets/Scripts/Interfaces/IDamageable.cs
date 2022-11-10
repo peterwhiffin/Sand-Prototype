@@ -4,5 +4,5 @@ using UnityEngine;
 
 public interface IDamageable
 {
-    bool CheckDamage(int damage, int swingDirection);    
+    bool CheckHit(int damage, int swingDirection);    
 }
