@@ -17,4 +17,4 @@ MonoBehaviour:
   attackMoveSpeed: 0
   jumpHeight: 1
   groundCheckDistance: 0.05
-  maxHealth: 99999
+  maxHealth: 100

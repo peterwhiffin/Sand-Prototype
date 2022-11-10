@@ -24,7 +24,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2030026057}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.049, y: 0.142, z: -0.341}
+  m_LocalPosition: {x: 0.023, y: 0.018, z: -0.341}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -307,6 +307,7 @@ GameObject:
   - component: {fileID: 5610481354026648587}
   - component: {fileID: 5610481354026648586}
   - component: {fileID: 202726822}
+  - component: {fileID: 1526389816}
   m_Layer: 6
   m_Name: Banana Man
   m_TagString: Player
@@ -370,15 +371,12 @@ MonoBehaviour:
   animator: {fileID: 5610481354026648589}
   mainCam: {fileID: 0}
   controller: {fileID: 5610481354026648584}
-  playerRB: {fileID: 0}
   cameraFollowTarget: {fileID: 0}
   swordArmTarget: {fileID: 2069116751531511641}
   hitCheckPosition: {fileID: 2030026058}
-  hitCheckPositionTwo: {fileID: 0}
   swordArmConstraint: {fileID: 2069116751338909161}
-  blockCollider: {fileID: 453664055}
   audioSource: {fileID: 202726822}
-  attackDirections:
+  attackDirection:
   - RightSwing
   - LeftSwing
   - UpSwing
@@ -393,36 +391,24 @@ MonoBehaviour:
   hitMask:
     serializedVersion: 2
     m_Bits: 64
-  groundCheckMask:
-    serializedVersion: 2
-    m_Bits: 256
-  FPSValue: {fileID: 0}
-  enemy: {fileID: 0}
-  directionIndex: 0
+  blockIndex: 0
   currentHealth: 100
   animLayer: 1
-  usingIndex: 0
-  directionChoiceX: 0
-  directionChoiceY: 0
+  currentIndex: 0
+  blockChoiceX: 0
+  blockChoiceY: 0
   turnSmoothVelocity: 0
   turnSmoothTime: 0.1
   cameraYRot: 0
-  groundHeight: 0
-  jumpHeight: 0
-  targetAngle: 0
-  lookAngle: 0
-  hitCheckSize: {x: 0, y: 0, z: 0}
   startingCameraRotation: {x: 0, y: 0, z: 0}
-  oldHitCheckPosition: {x: 0, y: 0, z: 0}
   abilityDone: 1
   endAbility: 0
   isAttacking: 0
-  isBlocking: 0
+  blocking: 0
+  attackBlocked: 0
   attackHit: 0
   shouldCheckHit: 0
-  grounded: 1
-  jumping: 0
-  blockedByOther: 0
+  dead: 0
   hitByOther: 0
 --- !u!114 &5610481354026648590
 MonoBehaviour:
@@ -436,8 +422,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5af29ce92b9bf9041862628988f9a4df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  canJump: 1
-  canAttack: 0
 --- !u!114 &5610481354026648585
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -572,7 +556,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 5610481354026648590}
         m_TargetAssemblyTypeName: InputHandler, Assembly-CSharp
-        m_MethodName: OnShiftRunInput
+        m_MethodName: onShiftRunInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -588,7 +572,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 5610481354026648590}
         m_TargetAssemblyTypeName: InputHandler, Assembly-CSharp
-        m_MethodName: OnJumpInput
+        m_MethodName: onKickInput
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -598,12 +582,8 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-    m_ActionId: f6f9439f-7442-4a2a-b732-8af014609a9c
-    m_ActionName: Player/Jump[/Keyboard/space]
-  - m_PersistentCalls:
-      m_Calls: []
-    m_ActionId: a088eeaf-c6e5-40cd-8beb-dc0b0bb66396
-    m_ActionName: Player/Grapple[/Mouse/middleButton]
+    m_ActionId: 88c68b61-bfed-4778-be48-1c703dfb0690
+    m_ActionName: Player/KickInput[/Keyboard/f]
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -621,7 +601,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 2
   m_Height: 2
-  m_Radius: 0.35
+  m_Radius: 0.26
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -822,6 +802,24 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!111 &1526389816
+Animation:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1186579104984171725}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Animation: {fileID: 0}
+  m_Animations:
+  - {fileID: 7400000, guid: 59dcaab3729a7b54783573f3a4509253, type: 2}
+  - {fileID: 7400000, guid: 90bb0e0ee80e1ec4baaddaf0f99b7b34, type: 2}
+  - {fileID: 7400000, guid: 62232cd1a85f72a41add80778479a2e5, type: 2}
+  m_WrapMode: 0
+  m_PlayAutomatically: 1
+  m_AnimatePhysics: 0
+  m_CullingType: 0
 --- !u!1 &1194828179723754444
 GameObject:
   m_ObjectHideFlags: 0
@@ -3358,11 +3356,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: cutter01
       objectReference: {fileID: 0}
-    - target: {fileID: -927199367670048503, guid: 5b6a76c08928d1940a2a12754f822d48,
-        type: 3}
-      propertyPath: m_Layer
-      value: 6
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b6a76c08928d1940a2a12754f822d48, type: 3}
 --- !u!4 &6470633040099556475 stripped
@@ -3371,34 +3364,3 @@ Transform:
     type: 3}
   m_PrefabInstance: {fileID: 2069116751610877793}
   m_PrefabAsset: {fileID: 0}
---- !u!1 &8040921702170676840 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: -927199367670048503, guid: 5b6a76c08928d1940a2a12754f822d48,
-    type: 3}
-  m_PrefabInstance: {fileID: 2069116751610877793}
-  m_PrefabAsset: {fileID: 0}
---- !u!65 &453664055
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8040921702170676840}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 0
-  serializedVersion: 2
-  m_Size: {x: 0.14001386, y: 0.20415373, z: 1.1697395}
-  m_Center: {x: -0.0000010721291, y: -0.01787972, z: -0.21370278}
---- !u!114 &453664057
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8040921702170676840}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e23e62f6db678cc44bb18303cdee2c17, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 

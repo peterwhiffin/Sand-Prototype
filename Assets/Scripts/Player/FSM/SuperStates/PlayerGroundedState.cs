@@ -52,9 +52,8 @@ public class PlayerGroundedState : PlayerState
 
         if (blockInput != 0)
         {
-            player.weaponCollider.enabled = true;
             player.CameraLockToCharacter();
-            player.usingIndex = player.directionIndex;
+            player.blockCollider.enabled = true;
             player.isBlocking = true;
             player.endAbility = true;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 1, .2f);
@@ -62,7 +61,7 @@ public class PlayerGroundedState : PlayerState
         }
         else
         {
-            player.weaponCollider.enabled = false;
+            player.blockCollider.enabled = false;
             player.isBlocking = false;
             player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 0, .2f);
         }

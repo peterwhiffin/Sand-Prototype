@@ -11,7 +11,7 @@ public class EnemyAttackState : EnemyAbilityState
     public override void Enter()
     {
         base.Enter();
-        enemy.animator.Play(enemy.enemyAttackDirection[enemy.usingIndex = enemy.SwingChoice()], 1, 0);
+        enemy.animator.Play(enemy.enemyAttackDirection[enemy.currentIndex = enemy.SwingChoice()], 1, 0);
         enemy.isAttacking = true;
     }
 
