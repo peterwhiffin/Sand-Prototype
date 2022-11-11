@@ -15,12 +15,12 @@ public class DetectionArea : MonoBehaviour
 
 
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("Player"))
-        {
-            enemyScript.playerInProximity = true;
-            enemyScript.detectedPlayer = other.gameObject.GetComponent<Player>();
-        }
-    }
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    if (other.CompareTag("Player"))
+    //    {
+    //        enemyScript.playerInProximity = true;
+    //        enemyScript.detectedPlayer = other.gameObject.GetComponent<Player>();
+    //    }
+    //}
 }

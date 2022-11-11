@@ -25,15 +25,18 @@ public class Player : MonoBehaviour, IDamageable
     public Transform cameraFollowTarget;
     public Transform swordArmTarget;
     public Transform hitCheckPosition;
+    public Transform hitCheckPositionTwo;
     public TwoBoneIKConstraint swordArmConstraint;
-    public BoxCollider blockCollider;
     public AudioSource audioSource;
     public List<string> attackDirection;
     public List<Transform> blockingPositions;
     public List<AudioClip> audioClips;
     public List<GameObject> hitObjects;
+    public List<BoxCollider> hitColliders;
     public LayerMask hitMask;
     public LayerMask groundCheckMask;
+
+    public GameObject enemy;
    
     public int directionIndex;
     public int currentHealth;
@@ -142,7 +145,7 @@ public class Player : MonoBehaviour, IDamageable
     //Just checks if vertical movement is greater than horizontal and sets directionIndex, which is used for block and swing direction.
     //The direction choices have minimum thresholds to be able to change the direction index, which should probably be variables.
     //Currently biased towards vertical mouse movement.
-    public void CombatDirection(Vector2 lookInput)
+    public int CombatDirection(Vector2 lookInput)
     {
         directionChoiceX += lookInput.x;
         directionChoiceY += lookInput.y;
@@ -150,18 +153,30 @@ public class Player : MonoBehaviour, IDamageable
         if (Mathf.Abs(directionChoiceX) > 45 || directionChoiceY > 15)
         {
             if (directionChoiceY > Mathf.Abs(directionChoiceX))
-                directionIndex = 2;
+            {
+                directionChoiceX = 0;
+                directionChoiceY = 0;
+                return 2;
+            }
+
             else
             {
                 if (directionChoiceX > 0)
-                    directionIndex = 0;
+                {
+                    directionChoiceX = 0;
+                    directionChoiceY = 0;
+                    return 0;
+                }
                 else
-                    directionIndex = 1;
+                {
+                    directionChoiceX = 0;
+                    directionChoiceY = 0;
+                    return 1;
+                }
             }
-
-            directionChoiceX = 0;
-            directionChoiceY = 0;
         }
+        else
+            return directionIndex;
     }
 
     //moves and rotates the sword arm IK target based on direction index. 
@@ -177,14 +192,12 @@ public class Player : MonoBehaviour, IDamageable
     // this list is cleared in the EndAbility method.
     public void HitCheck()
     {
-        Collider[] colliders = Physics.OverlapSphere(hitCheckPosition.position, .3f, hitMask, QueryTriggerInteraction.Ignore);
-
-        foreach (Collider collider in colliders)
+        if(Physics.Raycast(hitCheckPosition.position, hitCheckPositionTwo.position - hitCheckPosition.position, out RaycastHit hitInfo, Vector3.Distance(hitCheckPosition.position, hitCheckPositionTwo.position), hitMask))
         {
-            if (collider.TryGetComponent<IDamageable>(out IDamageable damageableObject) && collider.gameObject != gameObject && !hitObjects.Contains(collider.gameObject))
+            if (hitInfo.transform.gameObject != gameObject && !hitObjects.Contains(hitInfo.transform.gameObject) && hitInfo.transform.TryGetComponent<IDamageable>(out IDamageable damageable))
             {
-                blockedByOther = damageableObject.CheckDamage(30, usingIndex);
-                hitObjects.Add(collider.gameObject);
+                blockedByOther = damageable.CheckDamage(30, hitInfo.collider);
+                hitObjects.Add(hitInfo.transform.gameObject);
             }
         }
     }
@@ -192,10 +205,25 @@ public class Player : MonoBehaviour, IDamageable
     //this interface method is called by other objects' hit checks.
     //returns blocking bool and applies damage if not blocked.
     //may want to use a general damage method for all damage.
-    public bool CheckDamage(int damage, int swingDirection)
+    //This feels kinda stupid to me, but it works for now. May try using collider on sword rather than raycasting hit checks.
+    //Also not sure what kind of performance hit passing collider references around has.
+    public bool CheckDamage(int damage, Collider collider)
     {
-        if (isBlocking && swingDirection == directionIndex)
-            return true;        
+        if (isBlocking)
+        {
+            if (collider == hitColliders[0] && usingIndex == 0)           
+                return true;           
+            else if (collider == hitColliders[1] && usingIndex == 1)            
+                return true;           
+            else if (collider == hitColliders[2] && usingIndex == 2)            
+                return true;           
+            else
+            {
+                currentHealth -= damage;
+                hitByOther = true;
+                return false;
+            }           
+        }
         else
         {
             currentHealth -= damage;
@@ -265,18 +293,15 @@ public class Player : MonoBehaviour, IDamageable
     //just a place to keep all my debugs.
     public void Debugging()
     {
-        Debug.Log(controller.velocity);
+        //Draws the hitcheck rays
+        if(shouldCheckHit)
+            Debug.DrawRay(hitCheckPosition.position, hitCheckPositionTwo.position - hitCheckPosition.position, Color.red, 5f);
     }
 
     //draws gizmoz.
     //currently draws the hitcheck and groundcheck spheres.
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
 
-        if(shouldCheckHit)
-            Gizmos.DrawWireSphere(hitCheckPosition.position, .3f);
-
-        Gizmos.DrawWireSphere(transform.position, playerData.groundCheckDistance);
     }
 }
