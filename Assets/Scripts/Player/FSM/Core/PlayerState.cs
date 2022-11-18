@@ -2,11 +2,18 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerState
+public class PlayerState 
 {
+
     protected PlayerStateMachine stateMachine;
+
+
     protected Player player;
+
+
     protected PlayerData playerData;
+
+
     protected string animBoolName;
    
     
@@ -20,6 +27,7 @@ public class PlayerState
     public bool canJump;
     public bool canAttack;
 
+    
     public PlayerState(Player player, PlayerStateMachine stateMachine, PlayerData playerData, string animBoolName)
     {
         this.player = player;

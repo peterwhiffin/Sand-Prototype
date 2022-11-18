@@ -1,8 +1,11 @@
+using FishNet.Connection;
+using FishNet.Object;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+
 public interface IDamageable
-{
-    bool CheckDamage(int damage, Collider colliderHit);    
+{  
+    void CheckDamage(int damage, int colliderID);
 }

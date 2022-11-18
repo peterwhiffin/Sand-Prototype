@@ -54,15 +54,21 @@ public class PlayerGroundedState : PlayerState
         {
             player.CameraLockToCharacter();
             player.usingIndex = player.directionIndex;
+            player.networkAnimator.Animator.SetFloat("BlockIndex", player.usingIndex);
+            player.animator.SetBool("AbilityDone", true);
             player.isBlocking = true;
             player.endAbility = true;
-            player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 1, .2f);
+            player.animator.SetBool("Block", true);
+            player.networkAnimator.Animator.SetLayerWeight(1, 1f);
             player.Block();
         }
         else
         {
+            //player.networkAnimator.Animator.SetLayerWeight(1, 0f);
             player.isBlocking = false;
-            player.swordArmConstraint.weight = Mathf.Lerp(player.swordArmConstraint.weight, 0, .2f);
+            player.animator.SetBool("Block", false);
+            player.animator.SetBool("AbilityDone", false);
+            //player.animator.SetBool("AbilityDone", true);
         }
 
         if (!player.abilityDone && !player.endAbility)
@@ -74,8 +80,8 @@ public class PlayerGroundedState : PlayerState
         if (player.shouldCheckHit)
             player.HitCheck();
         
-        if (player.blockedByOther)
-            player.BlockedByOther();
+        if (player.blockedOther)
+            player.BlockedOther();
     }
 
     public override void PhysicsUpdate()

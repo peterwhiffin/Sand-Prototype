@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.Animations.Rigging;
 
-public class Enemy : MonoBehaviour, IDamageable
+public class Enemy : MonoBehaviour
 {
     public EnemyStateMachine StateMachine { get; private set; }
     public EnemyIdleState IdleState { get; private set; }
@@ -206,7 +206,7 @@ public class Enemy : MonoBehaviour, IDamageable
         {
             if (hitInfo.transform.gameObject != gameObject && !hitObjects.Contains(hitInfo.transform.gameObject) && hitInfo.transform.TryGetComponent<IDamageable>(out IDamageable damageable))
             {
-                blockedByOther = damageable.CheckDamage(30, hitInfo.collider);
+                //blockedByOther = damageable.CheckDamage(30, hitInfo.collider);
                 hitObjects.Add(hitInfo.transform.gameObject);
             }
         }
@@ -214,28 +214,28 @@ public class Enemy : MonoBehaviour, IDamageable
 
 
     
-    public bool CheckDamage(int damage, Collider collider)
+    public void CheckDamage(int damage, Collider collider)
     {
         if (isBlocking)
         {
             if (collider == hitColliders[0] && usingIndex == 0)
-                return true;
+                return;
             else if (collider == hitColliders[1] && usingIndex == 1)
-                return true;
+                return;
             else if (collider == hitColliders[2] && usingIndex == 2)
-                return true;
+                return;
             else
             {
                 currentHealth -= damage;
                 hitByOther = true;
-                return false;
+                return;
             }
         }
         else
         {
             currentHealth -= damage;
             hitByOther = true;
-            return false;
+            return;
         }
     }
 
